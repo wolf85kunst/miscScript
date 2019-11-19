@@ -21,7 +21,7 @@ colorNormal="\e[0m"
 threadLimit(){
 	running=$(jobs -rp |wc -l)
 	while [ ${running} -ge ${1} ]; do
-		sleep 2
+		sleep 1
 		running=$(jobs -rp |wc -l)
 	done
 }
