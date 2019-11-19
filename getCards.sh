@@ -29,12 +29,11 @@ unzipArchive()
 {
 	packageName=$(echo "${1}" |grep -o '[a-zA-Z_]*.o8c')
 	startTime=$(date +%s)
-	wget -q ${1} -P ${destArchives} && status="$?"
+	wget -q ${1} -P ${destArchives} && status=$?
 	endTime=$(date +%s)
 	totalTime=$((endTime-startTime))
-	if [ ${status} -eq 0 ]; then
-		#echo -e "  [${cpt}/${packagesNb}] - ${packageName} downloaded in ${totalTime} secs. [${colorGreen} Done ${colorNormal}]"
-		echo -e "  - ${packageName} downloaded in ${totalTime} secs. [${colorGreen} Done ${colorNormal}]"
+	if [ "${status}" -eq 0 ]; then
+		echo -e " - ${packageName} downloaded in ${totalTime} secs. [${colorGreen} Done ${colorNormal}]"
 	else
 		echo -e " - ${packageName} [${colorRed} Failed ${colorNormal}]"
 	fi
