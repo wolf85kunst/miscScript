@@ -10,9 +10,36 @@ destDir="/home/${USER}/Images/${workDir}"
 destArchives="/tmp/${workDir}"
 curlOutput='/tmp/sdajce.html'
 
+maxThread=10
+
 colorRed="\e[31m"
 colorGreen="\e[92m"
 colorNormal="\e[0m"
+
+# FUNCTIONS
+# ------------------------------------------------------------------
+threadLimit(){
+	running=$(jobs -rp |wc -l)
+	while [ ${running} -ge ${1} ]; do
+		sleep 2
+		running=$(jobs -rp |wc -l)
+	done
+}
+unzipArchive()
+{
+	packageName=$(echo "${1}" |grep -o '[a-zA-Z_]*.o8c')
+	startTime=$(date +%s)
+	wget -q ${1} -P ${destArchives} && status="$?"
+	endTime=$(date +%s)
+	totalTime=$((endTime-startTime))
+	if [ ${status} -eq 0 ]; then
+		#echo -e "  [${cpt}/${packagesNb}] - ${packageName} downloaded in ${totalTime} secs. [${colorGreen} Done ${colorNormal}]"
+		echo -e "  - ${packageName} downloaded in ${totalTime} secs. [${colorGreen} Done ${colorNormal}]"
+	else
+		echo -e " - ${packageName} [${colorRed} Failed ${colorNormal}]"
+	fi
+}
+
 
 # MAIN
 # ------------------------------------------------------------------
@@ -20,27 +47,20 @@ mkdir -p ${destArchives}
 mkdir -p ${destDir}
 
 curl -so "${curlOutput}" "${srcUrl}"
-packagesList=$(cat ${curlOutput} |grep -io "href=\"https://[a-z._:/-]*/ressources/octgn/[a-z_]*.o8c\"" |tail -n 1)
+packagesList=$(cat ${curlOutput} |grep -io "href=\"https://[a-z._:/-]*/ressources/octgn/[a-z_]*.o8c\"" |sed -e 's/href="//;s/"//g')
 packagesNb=$(echo "${packagesList}" |wc -l)
 
 cpt=1
-echo "---> Downloading octgn pack from ${srcUrl}"
+echo "---> Downloading octgn pack from ${srcUrl} (${packagesNb} found)"
+startTime=$(date +%s)
 while read url; do
-	url=$(echo ${url} |sed -e 's/href="//;s/"//g' )
-	packageName=$(echo "${url}" |grep -o '[a-zA-Z_]*.o8c')
-	startTime=$(date +%s)
-	wget -q ${url} -P ${destArchives} && status="$?"
-	endTime=$(date +%s)
-	totalTime=$((endTime-startTime))
-	if [ ${status} -eq 0 ]; then
-		echo -e "  [${cpt}/${packagesNb}] - ${packageName} downloaded in ${totalTime} secs. [${colorGreen} Done ${colorNormal}]"
-	else
-		echo -e "  [${cpt}/${packagesNb}] - ${packageName} [${colorRed} Failed ${colorNormal}]"
-	fi
-
+	threadLimit ${maxThread}
+	unzipArchive "${url}" &
 	cpt=$((cpt+1))
 done < <(echo "${packagesList}")
-
+endTime=$(date +%s) ; totalTime=$((endTime-startTime))
+wait
+echo "> Finished in ${totalTime} secs."
 echo
 while read archive; do
 	listCard=$(unzip -Z1 "${destArchives}/${archive}" |grep '.jpg$')
