@@ -20,7 +20,7 @@ mkdir -p ${destArchives}
 mkdir -p ${destDir}
 
 curl -so "${curlOutput}" "${srcUrl}"
-packagesList=$(cat ${curlOutput} |grep -io "href=\"https://[a-z._:/-]*/ressources/octgn/[a-z_]*.o8c\"")
+packagesList=$(cat ${curlOutput} |grep -io "href=\"https://[a-z._:/-]*/ressources/octgn/[a-z_]*.o8c\"" |tail -n 1)
 packagesNb=$(echo "${packagesList}" |wc -l)
 
 cpt=1
@@ -46,7 +46,7 @@ while read archive; do
 	listCard=$(unzip -Z1 "${destArchives}/${archive}" |grep '.jpg$')
 	listCardNb=$(echo "${listCard}" |wc -l)
 	folderCardName=$(echo ${archive} |sed 's/.o8c//')
-	echo "--> Unzip ${archive} to ${destDir}/${folderCardName}"
+	echo "---> Unzip ${archive} to ${destDir}/${folderCardName}"
 	
 	mkdir -p ${destDir}/${folderCardName}
 
