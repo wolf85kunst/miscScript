@@ -60,6 +60,7 @@ while read url; do
 done < <(echo "${packagesList}")
 endTime=$(date +%s) ; totalTime=$((endTime-startTime))
 wait
+echo
 echo "> Finished in ${totalTime} secs."
 echo
 while read archive; do
@@ -84,6 +85,8 @@ while read archive; do
 		cpt=$((cpt+1))
 	done < <(echo "${listCard}")
 done < <(ls -1 "${destArchives}")
+echo
+echo "> OCTGN packages has been successfully extracted to ${destDir}. Enjoy !"
 
 rm -rf ${curlOutput}
 rm -rf ${destArchives}
