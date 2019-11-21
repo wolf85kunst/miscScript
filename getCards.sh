@@ -25,8 +25,7 @@ threadLimit(){
 		running=$(jobs -rp |wc -l)
 	done
 }
-unzipArchive()
-{
+downloadArchive(){
 	packageName=$(echo "${1}" |grep -o '[a-zA-Z_]*.o8c')
 	startTime=$(date +%s)
 	wget -q ${1} -P ${destArchives} && status=$?
@@ -38,7 +37,6 @@ unzipArchive()
 		echo -e " - ${packageName} [${colorRed} Failed ${colorNormal}]"
 	fi
 }
-
 
 # MAIN
 # ------------------------------------------------------------------
@@ -54,7 +52,7 @@ echo "---> Downloading octgn pack from ${srcUrl} (${packagesNb} found)"
 startTime=$(date +%s)
 while read url; do
 	threadLimit ${maxThread}
-	unzipArchive "${url}" &
+	downloadArchive "${url}" &
 	cpt=$((cpt+1))
 done < <(echo "${packagesList}")
 endTime=$(date +%s) ; totalTime=$((endTime-startTime))
