@@ -1,0 +1,15 @@
+#!/bin/bash
+# HGU
+# Wrapper to manage easily SSH
+# You shoud add this command to your .bashrc file to enable auto-completion from ${serverList} :
+#	serverList="/home/${USER}/Documents/servers.list"
+#	complete -W "$(cat ${serverList})" ssr
+
+tabTitle="${1}"
+sshUser='root'
+sshKeyPath="/home/${USER}/Documents/keys/id_rsa"
+
+if [ $(ssh-add -l|wc -l) -eq 0 ]; then ssh-agent && ssh-add "${sshKeyPath}" ; fi
+
+echo -ne "\033]0;SSH:${tabTitle}\007"
+ssh -l ${sshUser} -A $@
