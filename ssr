@@ -1,9 +1,11 @@
 #!/bin/bash
-# HGU
-# Wrapper to manage easily SSH
-# You shoud add this command to your .bashrc file to enable auto-completion from ${serverList} :
+# Hugo GUTEKUNST
+# A wrapper to manage easily SSH with a server list
+# You shoud add these commands to your ".bashrc" file to enable "alias" and "auto-completion" from a ${serverList} :
+# ---
 #	serverList="/home/${USER}/Documents/servers.list"
 #	complete -W "$(cat ${serverList})" ssr
+#	alias ssr='/home/${USER}/Scripts/ssr' 
 
 tabTitle="${1}"
 sshUser='root'
