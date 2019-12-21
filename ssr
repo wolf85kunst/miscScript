@@ -9,9 +9,9 @@
 
 tabTitle="${1}"
 sshUser='root'
-sshKeyPath="/home/${USER}/Documents/keys/id_rsa"
+sshKeyPath="/home/${USER}/Documents/keys/hugo_gutekunst"
 
-if [ $(ssh-add -l|wc -l) -eq 0 ]; then ssh-agent && ssh-add "${sshKeyPath}" ; fi
-
+if [ $# -eq 0 ]; then echo -e "* USAGE :\t${0} [server.fqdn.tld]" && exit 100 ; fi
+if [ $(ssh-add -l | grep -v 'The agent has no identities.' | wc -l) -eq 0 ]; then ssh-agent && ssh-add "${sshKeyPath}" ; fi
 echo -ne "\033]0;SSH:${tabTitle}\007"
 ssh -l ${sshUser} -A $@
