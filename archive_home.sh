@@ -57,11 +57,12 @@ ArchiveSize=$(du -sh "${backupDir}/${ArchiveName}" | awk '{print $1}')
 chrono total
 logprint "Backup done with sucess -> "${backupDir}/${ArchiveName}" - ${ArchiveSize} (${total_time} secs)."
 
-# upload to backup server if needed
+# Upload archive to backup server
 logprint "Uploading to ${remoteAddress}..."
 chrono start
 upload
 chrono total
 logprint "Uploaded to ${remoteAddress} in ${total_time} secs."
 
+# Return to current dir
 cd ${CurrentPath}
