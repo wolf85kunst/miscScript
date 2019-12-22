@@ -25,20 +25,17 @@ remotePath='/home/hugo/'
 
 # FUNCTIONS
 # ----------------------------------------------------------
-logprint()
-{
+logprint() {
         format_date="[$(date "+%Y%m%d %H:%M")]"
         echo "${format_date} - $1" >> ${logPath}
 }
-chrono()
-{
+chrono() {
         case $1 in
         'start') start_time=`date +%s` ;;
         'total') end_time=`date +%s` ; total_time=$((end_time-start_time));;
         esac
 }
-upload()
-{
+upload() {
 	logprint "Uploading to ${remoteAddress}..."
 	chrono start
 	scp -P ${remotePort} "${backupDir}/${ArchiveName}" ${remoteUser}@${remoteAddress}:${remotePath}
@@ -52,10 +49,11 @@ buildFilesToBackup() {
 # MAIN
 # ----------------------------------------------------------
 logprint 'Starting backup...'
+chrono start
 mkdir -p ${backupDir}
+buildFilesToBackup
 CurrentPath=$(pwd)
 
-chrono start
 cd $workDir
 tar -Jvcf "${backupDir}/${ArchiveName}" --exclude "${DirToExclude}" ${DirToBackup}
 ArchiveSize=$(du -sh "${backupDir}/${ArchiveName}" | awk '{print $1}')
