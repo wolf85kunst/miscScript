@@ -3,7 +3,7 @@
 
 # DESCRIPTION
 # ----------------------------------------------------------
-# Backup your work directory and upload it to save it.
+# Backup your work directory and upload it to a backup server
 # you need to install "xz-utils" package to compress archive.
 
 # GLOBAL SETTINGS
@@ -36,11 +36,7 @@ chrono() {
         esac
 }
 upload() {
-	logprint "Uploading to ${remoteAddress}..."
-	chrono start
 	scp -P ${remotePort} "${backupDir}/${ArchiveName}" ${remoteUser}@${remoteAddress}:${remotePath}
-	chrono total
-	logprint "Uploaded to ${remoteAddress} in ${total_time} secs."
 }
 buildFilesToBackup() {
 	dpkg -l > /tmp/dpkg.list
@@ -54,12 +50,18 @@ mkdir -p ${backupDir}
 buildFilesToBackup
 CurrentPath=$(pwd)
 
+# Create archive
 cd $workDir
 tar -Jvcf "${backupDir}/${ArchiveName}" --exclude "${DirToExclude}" ${DirToBackup}
 ArchiveSize=$(du -sh "${backupDir}/${ArchiveName}" | awk '{print $1}')
-chrono total && logprint "Backup done with sucess -> "${backupDir}/${ArchiveName}" - ${ArchiveSize} (${total_time} secs)."
+chrono total
+logprint "Backup done with sucess -> "${backupDir}/${ArchiveName}" - ${ArchiveSize} (${total_time} secs)."
 
 # upload to backup server if needed
+logprint "Uploading to ${remoteAddress}..."
+chrono start
 upload
+chrono total
+logprint "Uploaded to ${remoteAddress} in ${total_time} secs."
 
 cd ${CurrentPath}
