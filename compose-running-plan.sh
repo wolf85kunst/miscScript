@@ -1,5 +1,5 @@
 #!/bin/bash
-# Hugo GUTEKUNST 2020
+# Hugo GUTEKUNST Feb. 2020
 
 # DESCRIPTION
 # ------------------------------------------------------------------------------------------------------
@@ -48,12 +48,17 @@ colorBackgroundBlue="\e[44m"
 
 # FUNCTIONS
 # ------------------------------------------------------------------------------------------------------
+printLine(){
+	char='='
+	repetition=40
+	for i in $(seq 1 ${repetition}) ; do echo -n ${char} ; done
+	echo
+}
 scaleNumber(){
 	# Arg3 = float
 	# Arg2 = scale
 	float=${1}
 	scale=${2}
-	#if [ ${float} != '-' ]; then
 	if ! [[ ${float} =~ '^[0-9.]+$' ]]; then
 		if [ ${scale} -eq 0 ]; then
 			echo -n ${float} | cut -d'.' -f1
@@ -102,7 +107,6 @@ printTrainingPlan(){
 # ------------------------------------------------------------------------------------------------------
 controlRunFrequency
 
-#longRunPeriod=$((${numberOfWeekForTraining}-${longRunBefore}-${firstLongRun}+1))
 longRunPeriod=$((${numberOfWeekForTraining}-${longRunBefore}-${firstLongRun}+1))
 volumePeriod=$((${numberOfWeekForTraining}-${sharpening}))
 
@@ -118,12 +122,15 @@ weekVolume=${initialVolume}
 longRun=''
 
 echo -e "${colorNormal}"
+printLine
 echo -e "${colorRed}SUMMARY${colorNormal}"
-echo -e '----------------'
-echo -e "* Your training plan will start on \"${colorMagenta}$(date '+%d/%m/%Y' -d ${beginningDate})${colorNormal}\" and stop on \"${colorMagenta}$(date '+%d/%m/%Y' -d ${lastMondayDate})${colorNormal}\" !"
+printLine
+echo -e "* Your training plan will start on [${colorMagenta}$(date '+%d/%m/%Y' -d ${beginningDate})${colorNormal}] & stop on [${colorMagenta}$(date '+%d/%m/%Y' -d ${lastMondayDate})${colorNormal}] !"
 echo -e "* Your training plan will last ${colorGreen}${numberOfWeekForTraining}${colorNormal} weeks."
+echo
 echo -e "* On your busiest week, you will run ${colorGreen}${volumeTarget}${colorNormal} km."
 echo -e "* Your longest run will be ${colorGreen}${longRunTarget}${colorNormal}${colorNormal} km."
+echo
 echo -e "* Each week you should add ~${colorGreen}$(scaleNumber ${interval} 2)${colorNormal} Km to your plan."
 echo -e "* Each long run you should add ~${colorGreen}$(scaleNumber ${intervalLongRun} 2)${colorNormal} kms." 
 echo
@@ -137,9 +144,9 @@ for i in ${!runFrequency[@]}; do
 	echo -e "\tP$((${i}+1))) ${colorGreen}$(echo ${runFrequency[${i}]} | cut -d';' -f1)${colorNormal} trainings per week during ${colorGreen}$(echo ${runFrequency[${i}]} |cut -d';' -f2)${colorNormal} weeks."
 done
 echo
-
+printLine
 echo -e "${colorRed}TRAINING PLAN${colorNormal}"
-echo '----------------'
+printLine
 for i in $(seq 1 ${numberOfWeekForTraining}); do
 		# ----------------------------------
 		# Calculate ${runPerWeek}
