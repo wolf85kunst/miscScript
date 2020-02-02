@@ -17,8 +17,8 @@ declare -a runFrequency		# Running frequency per week (time to go)
 				# Declaration syntax : "Number of runs per week ; Number of weeks ; comment"
 				# If Number of week is "-" on runFrequency[0] then the number of weeks of each different runFrequency is equal
 runFrequency[0]='3;-;3 trainings per week'
-runFrequency[1]='4;3;4 trainings per week'
-runFrequency[2]='5;2;5 trainings per week'
+runFrequency[1]='4;-;4 trainings per week'
+runFrequency[2]='5;-;5 trainings per week'
 
 # Running volume
 initialVolume=30		# Initial running volume (KM)
@@ -29,8 +29,9 @@ firstLongRun=7			# week number of the first long run (week number)
 initialLongRun=10		# The first long run in kilometer (KM)
 longRunTarget=30 		# The longest run desired in the training plan (KM)
 
-sharpening=2			# Number of weeks before competition for the longuest run
-longRunBefore=4
+# Rest
+sharpening=2			# Number of weeks before competition for sharpening
+longRunBefore=4			# Number of weeks after the longuest run
 
 # Volume reduction
 scaleBackP1=50			# The first phase of volume reduction (percentage)
@@ -39,7 +40,7 @@ scaleBackP2=10			# The second phase of volume reduction (percentage)
 # Global settings
 scaleNumber=2			# Precision of float number on display
 
-# Colors definition
+# Colors definition		# Bash color code library
 colorRed="\e[31m"
 colorGreen="\e[92m"
 colorNormal="\e[97m"
@@ -59,14 +60,11 @@ scaleNumber(){
 	# Arg2 = scale
 	float=${1}
 	scale=${2}
-	if ! [[ ${float} =~ '^[0-9.]+$' ]]; then
-		if [ ${scale} -eq 0 ]; then
-			echo -n ${float} | cut -d'.' -f1
-		else
-			echo -n ${float} | sed -r "s/([0-9]*\.[0-9]{${scale}}).*/\1/"
-		fi
+	#if ! [[ ${float} =~ '^[0-9.]+$' ]]; then
+	if [ ${scale} -eq 0 ]; then
+		echo -n ${float} | cut -d'.' -f1
 	else
-		echo '-'
+		echo -n ${float} | sed -r "s/([0-9]*\.[0-9]{${scale}}).*/\1/"
 	fi
 }
 controlRunFrequency(){
