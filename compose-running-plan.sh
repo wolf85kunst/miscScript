@@ -92,23 +92,24 @@ controlRunFrequency(){
 	fi
 }
 printVolume(){
-	shapeningPeriod=$((${numberOfWeekForTraining}-${#sharpening[@]}))
-	case ${i} in
-		${shapeningPeriod})
-			weekVolume=100
-		;;
-		*)
-			#weekVolume=$(bc -l <<<"(${weekVolume}+${interval})")
-			#30 + 3,7 * (3-1)
-			weekVolume=$(bc -l <<<"(${initialVolume}+${interval}*(${i}-1))")
-		;;
-	esac
-	echo "${weekVolume} ${shapeningPeriod}"
+	if [ ${i} -lt $((${numberOfWeekForTraining}-${#sharpening[@]})) ]; then
+		# Increase volume
+		weekVolume=$(bc -l <<<"(${initialVolume}+${interval}*(${i}-1))")
+	elif [ ${i} -eq $((${numberOfWeekForTraining}-${#sharpening[@]})) ]; then
+		# Rewrite volumeTarget
+		#echo "rewrite>${volumeTarget}"
+		weekVolume=${volumeTarget}
+	elif [ ${i} -ge $((${numberOfWeekForTraining}-${#sharpening[@]}+1)) ]; then
+		# Shapening phase
+		percentageVolume=${sharpening[$((${i}-(${numberOfWeekForTraining}-${#sharpening[@]}+1)))]}
+		weekVolume=$(bc -l <<<"(${percentageVolume}*${volumeTarget}/100)")
+	fi
+	echo -n ${weekVolume}
 }
 printTrainingPlan(){
 	dateFormat="$(date +%d/%m/%Y -d ${weekDate})"
 	
-	echo -ne "S${i} [${colorMagenta}${dateFormat}${colorNormal}] Volume=${colorGreen}$(scaleNumber ${weekVolume} ${scaleNumber})${colorNormal} km" 
+	echo -ne "S${i} [${colorMagenta}${dateFormat}${colorNormal}] Volume=${colorGreen}$(scaleNumber $(printVolume) ${scaleNumber})${colorNormal} km" 
 	echo -ne " - ${colorGreen}${runPerWeek}${colorNormal} runs/week"
 	echo -ne " - Avg=${colorGreen}$(scaleNumber ${avgGlobalSingleRun} 2)${colorNormal} km"
 	
@@ -146,9 +147,9 @@ echo -e "${colorRed}SUMMARY${colorNormal}"
 printLine
 echo -e "* Your training plan will start on [${colorMagenta}$(date '+%d/%m/%Y' -d ${beginningDate})${colorNormal}] & stop on [${colorMagenta}$(date '+%d/%m/%Y' -d ${lastMondayDate})${colorNormal}] !"
 echo -e "* Your training plan will last ${colorGreen}${numberOfWeekForTraining}${colorNormal} weeks."
-echo
-echo -e "* On your busiest week, you will run ${colorGreen}${volumeTarget}${colorNormal} km."
-echo -e "* Your longest run will be ${colorGreen}${longRunTarget}${colorNormal}${colorNormal} km."
+#echo
+#echo -e "* On your busiest week, you will run ${colorGreen}${volumeTarget}${colorNormal} km."
+#echo -e "* Your longest run will be ${colorGreen}${longRunTarget}${colorNormal}${colorNormal} km."
 echo
 #echo -e "* Each week you should add ~${colorGreen}$(scaleNumber ${interval} 2)${colorNormal} Km to your plan."
 #echo -e "* Each long run you should add ~${colorGreen}$(scaleNumber ${intervalLongRun} 2)${colorNormal} kms." 
@@ -172,7 +173,6 @@ printLine
 echo -e "${colorRed}TRAINING PLAN${colorNormal}"
 printLine
 for i in $(seq 1 ${numberOfWeekForTraining}); do
-		echo "---------===> $(printVolume)"
 		# ----------------------------------
 		# Calculate ${runPerWeek}
 		# ----------------------------------
@@ -240,8 +240,7 @@ for i in $(seq 1 ${numberOfWeekForTraining}); do
 		printTrainingPlan	
 		
 		# ----------------------------------
-		# Increase weekDate & weekVolume
+		# Increase weekDate
 		# ----------------------------------
 		weekDate=$(date '+%Y%m%d' -d "${weekDate}+7 days")
-		weekVolume=$(bc -l <<<"(${weekVolume}+${interval})")
 done
