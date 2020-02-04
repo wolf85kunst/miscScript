@@ -1,6 +1,5 @@
 #!/bin/bash
 # Hugo GUTEKUNST Feb. 2020
-## BETA
 
 # DESCRIPTION
 # ------------------------------------------------------------------------------------------------------
@@ -35,15 +34,16 @@ sharpening=2			# Number of weeks before competition for sharpening
 longRunBefore=4			# Number of weeks after the longuest run
 
 # Volume reduction
-scaleBackP1=50			# The first phase of volume reduction (percentage)
-scaleBackP2=10			# The second phase of volume reduction (percentage)
+#scaleBackP1=50			# The first phase of volume reduction (percentage)
+#scaleBackP2=10			# The second phase of volume reduction (percentage)
 
-declare -a sharpening
-sharpening[0]='50'
-sharpening[1]='10'
+declare -a sharpening		
+sharpening[0]='50;3'
+sharpening[1]='10;1'
 
-# Global settings
-scaleNumber=2			# Precision of float number on display
+# Misc settings
+scaleNumber=0			# Precision of float number on display
+tempFile=/tmp/plan.txt
 
 # Colors definition		# Bash color code library
 colorRed="\e[31m"
@@ -61,8 +61,6 @@ printLine(){
 	echo
 }
 scaleNumber(){
-	# Arg3 = float
-	# Arg2 = scale
 	float=${1}
 	scale=${2}
 	#if ! [[ ${float} =~ '^[0-9.]+$' ]]; then
@@ -72,52 +70,44 @@ scaleNumber(){
 		echo -n ${float} | sed -r "s/([0-9]*\.[0-9]{${scale}}).*/\1/"
 	fi
 }
-controlRunFrequency(){
+rewriteRunFrequency(){
+	period=$((${numberOfWeekForTraining}-${#sharpening[@]}))
 	if [ "$(echo ${runFrequency} | cut -d';' -f2 )" != '-' ]; then
 		sum=0 && for i in ${!runFrequency[@]}; do
 			sum=$((sum+$(echo ${runFrequency[${i}]} | cut -d';' -f2)))
 		done
-		if [ ${sum} -ne ${numberOfWeekForTraining} ]; then
-			echo -e "/!\ \${numberOfWeekForTraining} (${numberOfWeekForTraining}) should be equal to sum of \${runFrequency[@]} (${sum}) !" && exit
+		if [ ${sum} -ne ${period} ]; then
+			echo -e "/!\ \${numberOfWeekForTraining} (${period}) should be equal to sum of \${runFrequency[@]} (${sum}) !" && exit
 		fi
 	else
 		for i in ${!runFrequency[@]} ; do
 			if [ ${i} -eq $((${#runFrequency[@]}-1)) ]; then
-				numberOfWeek=$((${numberOfWeekForTraining}-(${numberOfWeekForTraining}/${#runFrequency[@]})*(${#runFrequency[@]}-1)))
+				numberOfWeek=$((${period}-(${period}/${#runFrequency[@]})*(${#runFrequency[@]}-1)))
 			else
-				numberOfWeek=$((${numberOfWeekForTraining}/${#runFrequency[@]}))
+				numberOfWeek=$((${period}/${#runFrequency[@]}))
 			fi
 			numberOfTrainings=$(echo ${runFrequency[${i}]} | cut -d';' -f1)	
 			runFrequency[${i}]="${numberOfTrainings};${numberOfWeek}"
 		done
 	fi
+	cpt=1
+	for i in ${!sharpening[@]}; do
+		numberOfRun=$(echo ${sharpening[${i}]} |cut -d';' -f2)
+		runFrequency[$((${#runFrequency[@]}))]="${numberOfRun};1"
+		cpt=$((cpt+1))
+	done
 }
 calcVolume(){
 	if [ ${i} -lt $((${numberOfWeekForTraining}-${#sharpening[@]})) ]; then
 		# Increase volume
 		weekVolume=$(bc -l <<<"(${initialVolume}+${interval}*(${i}-1))")
 	elif [ ${i} -eq $((${numberOfWeekForTraining}-${#sharpening[@]})) ]; then
-		# Rewrite volumeTarget
-		#echo "rewrite>${volumeTarget}"
 		weekVolume=${volumeTarget}
 	elif [ ${i} -ge $((${numberOfWeekForTraining}-${#sharpening[@]}+1)) ]; then
 		# Shapening phase
-		percentageVolume=${sharpening[$((${i}-(${numberOfWeekForTraining}-${#sharpening[@]}+1)))]}
+		percentageVolume=$( echo ${sharpening[$((${i}-(${numberOfWeekForTraining}-${#sharpening[@]}+1)))]} |cut -d';' -f1 )
 		weekVolume=$(bc -l <<<"(${percentageVolume}*${volumeTarget}/100)")
 	fi
-}
-old_printTrainingPlan(){
-	dateFormat="$(date +%d/%m/%Y -d ${weekDate})"
-	
-	echo -ne "S${i} [${colorMagenta}${dateFormat}${colorNormal}] Volume=${colorGreen}$(scaleNumber ${weekVolume} ${scaleNumber})${colorNormal} km" 
-	echo -ne " - ${colorGreen}${runPerWeek}${colorNormal} runs/week"
-	echo -ne " - Avg=${colorGreen}$(scaleNumber ${avgGlobalSingleRun} 2)${colorNormal} km"
-	
-	if ! [ -z ${longRun} ]; then 
-		echo -ne " -- SL=${colorGreen}$(scaleNumber ${longRun} ${scaleNumber})${colorNormal} km"
-		echo -ne " - Avg Sing.Run=${colorGreen}$(scaleNumber ${avgSingleRun} 2)${colorNormal} km"
-	fi
-	echo
 }
 calcRunPerWeek(){
 	sum=0
@@ -132,12 +122,37 @@ calcRunPerWeek(){
 	done
 	runPerWeek=$(echo ${runFrequency[${j}]} | cut -d';' -f1)
 }
+calcAvg(){
+	avg=$(bc -l <<<"(${weekVolume}/${runPerWeek})")
+}
+calcLongRun(){
+	if [ ${i} -ge $((${numberOfWeekForTraining}-(${#sharpening[@]}+1))) ]; then
+		longRun='off'
+	elif [ ${i} -ge ${firstLongRun} ]; then
+		longRun=$(bc -l <<<"(${initialLongRun}+((${i}-(${firstLongRun}))*${intervalLongRun}))")
+	else
+		longRun='-'	
+	fi
+}
+calcAvgSingle(){
+	if [ ${i} -ge $((${numberOfWeekForTraining}-(${#sharpening[@]}+1))) ]; then
+		avgSingle="${avg}"
+	elif [ ${i} -ge ${firstLongRun} ]; then
+		avgSingle=$(bc -l <<<"((${weekVolume}-${longRun})/(${runPerWeek}-1))")	
+	else
+		avgSingle="${avg}"
+	fi
+}
 printTrainingPlan(){
 	weekNumber=${i}
 	dateFormat="$(date +%d/%m/%Y -d ${2})"
 	weekVolume="$(scaleNumber ${3} ${scaleNumber})"
-	runPerWeek=${4}
-	echo "S${weekNumber} [${dateFormat}] ${weekVolume} ${runPerWeek}"
+	runPerWeek="${4}"
+	avg="$(scaleNumber ${5} 2)"
+	longRun="$(scaleNumber ${6} ${scaleNumber})"
+	avgSingle="$(scaleNumber ${7} 2)"
+
+	echo -e "S${weekNumber}|[${dateFormat}]|volume=${colorGreen}${weekVolume}${colorNormal}km|run=${runPerWeek}|avg=${avg}km|LR=${longRun}|avgS=${avgSingle}km" >> ${tempFile}
 }
 increaseDate(){
 	weekDate=$(date '+%Y%m%d' -d "${1}+7 days")
@@ -145,8 +160,8 @@ increaseDate(){
 
 # MAIN
 # ------------------------------------------------------------------------------------------------------
-controlRunFrequency
-
+rewriteRunFrequency
+if [ -f ${tempFile} ]; then rm ${tempFile}; fi
 longRunPeriod=$((${numberOfWeekForTraining}-${longRunBefore}-${firstLongRun}+1))
 volumePeriod=$((${numberOfWeekForTraining}-${#sharpening[@]}))
 
@@ -166,17 +181,12 @@ longRun=''
 # ----------------------------------
 echo -e "${colorNormal}"
 printLine
-echo -e "${colorRed}SUMMARY${colorNormal}"
+echo -e "${colorGreen}SUMMARY${colorNormal}"
 printLine
+
 echo -e "* Your training plan will start on [${colorMagenta}$(date '+%d/%m/%Y' -d ${beginningDate})${colorNormal}] & stop on [${colorMagenta}$(date '+%d/%m/%Y' -d ${lastMondayDate})${colorNormal}] !"
 echo -e "* Your training plan will last ${colorGreen}${numberOfWeekForTraining}${colorNormal} weeks."
-#echo
-#echo -e "* On your busiest week, you will run ${colorGreen}${volumeTarget}${colorNormal} km."
-#echo -e "* Your longest run will be ${colorGreen}${longRunTarget}${colorNormal}${colorNormal} km."
 echo
-#echo -e "* Each week you should add ~${colorGreen}$(scaleNumber ${interval} 2)${colorNormal} Km to your plan."
-#echo -e "* Each long run you should add ~${colorGreen}$(scaleNumber ${intervalLongRun} 2)${colorNormal} kms." 
-#echo
 echo -e "* Increase period :"
 echo -e "\tYou will increase your volume during ${colorGreen}${volumePeriod}${colorNormal} weeks : \
 ${initialVolume} Km to ${volumeTarget} Km (+ ~${colorGreen}$(scaleNumber ${interval} 2)${colorNormal} Km each week)."
@@ -189,73 +199,24 @@ for i in ${!runFrequency[@]}; do
 	echo -e "\tP$((${i}+1))) ${colorGreen}$(echo ${runFrequency[${i}]} | cut -d';' -f1)${colorNormal} trainings per week during ${colorGreen}$(echo ${runFrequency[${i}]} |cut -d';' -f2)${colorNormal} weeks."
 done
 echo
+
 # ----------------------------------
 # TRAINING PLAN
 # ----------------------------------
 printLine
-echo -e "${colorRed}TRAINING PLAN${colorNormal}"
+echo -e "${colorGreen}TRAINING PLAN${colorNormal}"
 printLine
+
 for i in $(seq 1 ${numberOfWeekForTraining}); do
-		# ----------------------------------
-		# Calculate ${runPerWeek}
-		# ----------------------------------
-
-		# ----------------------------------
-		# Long run
-		# ----------------------------------
-		if [ ${i} -ge ${firstLongRun} ]; then
-			longRun=$(bc -l <<<"(${initialLongRun}+(${longRunCpt}*${intervalLongRun}))")
-			longRunCpt=$((longRunCpt+1))
-		fi
-		
-		# ----------------------------------
-		# Average single Run
-		# ----------------------------------
-		if [ ${i} -ge ${firstLongRun} ]; then
-			avgSingleRun=$(bc -l <<<"((${weekVolume}-${longRun})/(${runPerWeek}-1))")
-		fi
-		
-		# ----------------------------------
-		# Average single Run without long Run
-		# ----------------------------------
-		avgGlobalSingleRun=$(bc -l <<<"(${weekVolume}/${runPerWeek})")
-		
-		# ----------------------------------
-		# longRunBefore
-		# ----------------------------------
-		if [ ${i} -ge $((${longRunPeriod}+${firstLongRun})) ]; then
-			longRun="${colorRed}off${colorNormal}"
-		fi
-		
-		# ----------------------------------
-		# Sharpening
-		# ----------------------------------
-		if [ ${i} -ge $((${volumePeriod}+1)) ]; then
-			weekVolume='10'
-		fi	
-		
-		# ----------------------------------
-		# Correcting/ajust value
-		# ----------------------------------
-		case ${i} in
-			$((${longRunPeriod}+${firstLongRun}-1)))
-				longRun=${longRunTarget}
-				;;
-			${volumePeriod}) 
-				weekVolume=${volumeTarget}
-				;;
-		esac
-
-		# ----------------------------------
-		# Print Training Plan
-		# ----------------------------------
 		calcVolume
 		calcRunPerWeek
-		#echo ">> ${weekVolume}"
-		printTrainingPlan ${i} ${weekDate} ${weekVolume} ${runPerWeek}
+		calcAvg
+		calcLongRun
+		calcAvgSingle
 		
-		# ----------------------------------
-		# Increase weekDate
-		# ----------------------------------
+		printTrainingPlan ${i} ${weekDate} ${weekVolume} ${runPerWeek} ${avg} ${longRun} ${avgSingle}
+
 		increaseDate ${weekDate} 
 done
+
+column ${tempFile} -t -s "|"
