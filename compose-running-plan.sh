@@ -92,7 +92,7 @@ controlRunFrequency(){
 		done
 	fi
 }
-printVolume(){
+calcVolume(){
 	if [ ${i} -lt $((${numberOfWeekForTraining}-${#sharpening[@]})) ]; then
 		# Increase volume
 		weekVolume=$(bc -l <<<"(${initialVolume}+${interval}*(${i}-1))")
@@ -105,12 +105,11 @@ printVolume(){
 		percentageVolume=${sharpening[$((${i}-(${numberOfWeekForTraining}-${#sharpening[@]}+1)))]}
 		weekVolume=$(bc -l <<<"(${percentageVolume}*${volumeTarget}/100)")
 	fi
-	echo -n ${weekVolume}
 }
-printTrainingPlan(){
+old_printTrainingPlan(){
 	dateFormat="$(date +%d/%m/%Y -d ${weekDate})"
 	
-	echo -ne "S${i} [${colorMagenta}${dateFormat}${colorNormal}] Volume=${colorGreen}$(scaleNumber $(printVolume) ${scaleNumber})${colorNormal} km" 
+	echo -ne "S${i} [${colorMagenta}${dateFormat}${colorNormal}] Volume=${colorGreen}$(scaleNumber ${weekVolume} ${scaleNumber})${colorNormal} km" 
 	echo -ne " - ${colorGreen}${runPerWeek}${colorNormal} runs/week"
 	echo -ne " - Avg=${colorGreen}$(scaleNumber ${avgGlobalSingleRun} 2)${colorNormal} km"
 	
@@ -119,6 +118,29 @@ printTrainingPlan(){
 		echo -ne " - Avg Sing.Run=${colorGreen}$(scaleNumber ${avgSingleRun} 2)${colorNormal} km"
 	fi
 	echo
+}
+calcRunPerWeek(){
+	sum=0
+	for j in ${!runFrequency[@]} ; do
+		numberOfWeek=$(echo ${runFrequency[${j}]} | cut -d';' -f2)
+		if [ ${i} -le $((${numberOfWeek}+${sum})) ]; then
+			break
+		else
+			sum=$((${sum}+${numberOfWeek}))
+			continue
+		fi
+	done
+	runPerWeek=$(echo ${runFrequency[${j}]} | cut -d';' -f1)
+}
+printTrainingPlan(){
+	weekNumber=${i}
+	dateFormat="$(date +%d/%m/%Y -d ${2})"
+	weekVolume="$(scaleNumber ${3} ${scaleNumber})"
+	runPerWeek=${4}
+	echo "S${weekNumber} [${dateFormat}] ${weekVolume} ${runPerWeek}"
+}
+increaseDate(){
+	weekDate=$(date '+%Y%m%d' -d "${1}+7 days")
 }
 
 # MAIN
@@ -177,17 +199,6 @@ for i in $(seq 1 ${numberOfWeekForTraining}); do
 		# ----------------------------------
 		# Calculate ${runPerWeek}
 		# ----------------------------------
-		sum=0
-		for j in ${!runFrequency[@]} ; do
-			numberOfWeek=$(echo ${runFrequency[${j}]} | cut -d';' -f2)
-			if [ ${i} -le $((${numberOfWeek}+${sum})) ]; then
-				break
-			else
-				sum=$((${sum}+${numberOfWeek}))
-				continue
-			fi
-		done
-		runPerWeek=$(echo ${runFrequency[${j}]} | cut -d';' -f1)
 
 		# ----------------------------------
 		# Long run
@@ -238,10 +249,13 @@ for i in $(seq 1 ${numberOfWeekForTraining}); do
 		# ----------------------------------
 		# Print Training Plan
 		# ----------------------------------
-		printTrainingPlan	
+		calcVolume
+		calcRunPerWeek
+		#echo ">> ${weekVolume}"
+		printTrainingPlan ${i} ${weekDate} ${weekVolume} ${runPerWeek}
 		
 		# ----------------------------------
 		# Increase weekDate
 		# ----------------------------------
-		weekDate=$(date '+%Y%m%d' -d "${weekDate}+7 days")
+		increaseDate ${weekDate} 
 done
