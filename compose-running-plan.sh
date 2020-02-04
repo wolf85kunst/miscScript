@@ -59,7 +59,7 @@ printLine(){
 }
 testNumber(){
 	regex='^[0-9]+([.][0-9]+)?$'
-	if [[ ${1} =~ $regex ]]; then
+	if [[ ${1} =~ ${regex} ]]; then
 		return 0
 	else
 		return 1
@@ -69,7 +69,6 @@ scaleNumber(){
 	float=${1}
 	scale=${2}
 	if $(testNumber ${float}); then
-		#echo NOMBRE
 		if [ ${scale} -eq 0 ]; then
 			echo -n ${float} | cut -d'.' -f1
 		else
