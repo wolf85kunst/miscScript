@@ -132,7 +132,7 @@ calcAvg(){
 }
 calcLongRun(){
 	if [ ${i} -ge $((${numberOfWeekForTraining}-(${#sharpening[@]}+1))) ]; then
-		longRun='off'
+		longRun='-'
 	elif [ ${i} -ge ${firstLongRun} ]; then
 		longRun=$(bc -l <<<"(${initialLongRun}+((${i}-(${firstLongRun}))*${intervalLongRun}))")
 	else
@@ -151,23 +151,33 @@ calcAvgSingle(){
 calcDate(){
 	weekDate=$(date '+%Y%m%d' -d "${beginningDate}+$((7*(${i}-1))) days") ;
 }
-increaseDate(){
-		weekDate=$(date '+%Y%m%d' -d "${1}+7 days")
-}
 printTrainingPlan(){
-	weekNumber=${i}
+	if [ ${i} -ge $((${numberOfWeekForTraining}-${#sharpening[@]}+1)) ]; then weekNumber=${colorRed}S${i}${colorNormal} ; else weekNumber=S${i} ; fi
+	
 	dateFormat="${colorMagenta}$(date +%d/%m/%Y -d ${2})${colorNormal}"
-	weekVolume="${colorGreen}$(scaleNumber ${3} ${scaleNumber})${colorNormal}km"
+	
+	if [ ${i} -eq $((${numberOfWeekForTraining}-${#sharpening[@]})) ]; then
+		weekVolume="${colorRed}$(scaleNumber ${3} ${scaleNumber})${colorNormal}km"
+	else
+		weekVolume="${colorGreen}$(scaleNumber ${3} ${scaleNumber})${colorNormal}km"
+	fi
+	
 	runPerWeek="${colorGreen}${4}${colorNormal}"
 	avg="${colorGreen}$(scaleNumber ${5} 2)${colorNormal}km"
+	
 	if testNumber ${6}; then
-		longRun="${colorGreen}$(scaleNumber ${6} ${scaleNumber})${colorNormal}km"
+		if [ ${i} -eq $((${numberOfWeekForTraining}-${longRunBefore})) ]; then
+			longRun="${colorRed}$(scaleNumber ${6} ${scaleNumber})${colorNormal}km"
+		else
+			longRun="${colorGreen}$(scaleNumber ${6} ${scaleNumber})${colorNormal}km"
+		fi
 	else
 		longRun="${colorRed}${6}${colorNormal}"
 	fi
+	
 	avgSingle="${colorGreen}$(scaleNumber ${7} 2)${colorNormal}km"
 
-	echo -e "S${weekNumber}|[${dateFormat}]|volume=${weekVolume}|run=${runPerWeek}|avg=${avg}|LR=${longRun}|avgS=${avgSingle}" >> ${tempFile}
+	echo -e "${weekNumber}|[${dateFormat}]|volume=${weekVolume}|run=${runPerWeek}|avg=${avg}|LR=${longRun}|avgS=${avgSingle}" >> ${tempFile}
 }
 
 # MAIN
@@ -209,7 +219,7 @@ echo
 # TRAINING PLAN
 # ----------------------------------
 printLine
-echo -e " ${colorGreen}TRAINING PLAN${colorNormal}"
+echo -e " ${colorGreen}TRAINING PLAN${colorNormal} [${numberOfWeekForTraining} weeks] [V+$(scaleNumber ${interval} 2)] [LR+$(scaleNumber ${intervalLongRun} 2)]"
 printLine
 
 for i in $(seq 1 ${numberOfWeekForTraining}); do
