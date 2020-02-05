@@ -12,7 +12,7 @@
 # Global setings
 beginningDate='20200101'	# Date of the first monday of the training plan. Format : "YYYYmmdd"
 lastMondayDate='20200324'	# Date of the last week of the training plan. Format : "YYYYmmdd"
-numberOfWeekForTraining=20	# Number of weeks for the training plan
+numberOfWeekForTraining=16	# Number of weeks for the training plan
 
 declare -a runFrequency		# Running frequency per week (time to go)
 				# Declaration syntax : "Number of runs per week ; Number of weeks ; comment"
@@ -26,8 +26,8 @@ initialVolume=30		# Initial running volume (KM)
 volumeTarget=70			# The maximum running volume desired in a week (KM)
 
 # Long Run
-firstLongRun=7			# week number of the first long run (week number)
-initialLongRun=10		# The first long run in kilometer (KM)
+firstLongRun=4			# week number of the first long run (week number)
+initialLongRun=15		# The first long run in kilometer (KM)
 longRunTarget=30 		# The biggest desired run in the training plan (KM)
 
 # Volume reduction (sharpening)
@@ -36,7 +36,6 @@ declare -a sharpening		# Sharpening period. Declare as many lines as there will 
 				# Declaration syntax : "percent of volume ; Run per week"
 sharpening[0]='50;3'
 sharpening[1]='10;1'
-sharpening[2]='5;1'
 
 # Misc settings
 scaleNumber=0			# Precision of float number on display
@@ -149,6 +148,9 @@ calcAvgSingle(){
 		avgSingle="${avg}"
 	fi
 }
+calcDate(){
+	weekDate=$(date '+%Y%m%d' -d "${beginningDate}+$((7*(${i}-1))) days") ;
+}
 increaseDate(){
 		weekDate=$(date '+%Y%m%d' -d "${1}+7 days")
 }
@@ -178,8 +180,6 @@ longRunPeriod=$((${numberOfWeekForTraining}-${longRunBefore}-${firstLongRun}+1))
 volumePeriod=$((${numberOfWeekForTraining}-${#sharpening[@]}))
 interval=$(bc -l <<<"(${volumeTarget}-${initialVolume})/(${volumePeriod}-1)")
 intervalLongRun=$(bc -l <<<"(${longRunTarget}-${initialLongRun})/(${longRunPeriod}-1)")
-
-weekDate=${beginningDate}
 
 # ----------------------------------
 # SUMMARY
@@ -213,15 +213,14 @@ echo -e " ${colorGreen}TRAINING PLAN${colorNormal}"
 printLine
 
 for i in $(seq 1 ${numberOfWeekForTraining}); do
+		calcDate
 		calcVolume
 		calcRunPerWeek
 		calcAvg
 		calcLongRun
 		calcAvgSingle
-		
-		printTrainingPlan ${i} ${weekDate} ${weekVolume} ${runPerWeek} ${avg} ${longRun} ${avgSingle}
 
-		increaseDate ${weekDate} 
+		printTrainingPlan ${i} ${weekDate} ${weekVolume} ${runPerWeek} ${avg} ${longRun} ${avgSingle}
 done
 
 # Draw array
