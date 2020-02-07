@@ -150,7 +150,7 @@ calcAvgSingle(){
 calcDate(){
 	weekDate=$(date '+%Y%m%d' -d "${beginningDate}+$((7*(${i}-1))) days") ;
 }
-printTrainingPlan(){
+calcTrainingPlan(){
 	if [ ${i} -ge $((${numberOfWeekForTraining}-${#sharpening[@]}+1)) ]; then weekNumber=${colorRed}S${i}${colorNormal} ; else weekNumber=S${i} ; fi
 	
 	dateFormat="${colorMagenta}$(date +%d/%m/%Y -d ${2})${colorNormal}"
@@ -178,6 +178,37 @@ printTrainingPlan(){
 
 	echo -e "${weekNumber}|[${dateFormat}]|volume=${weekVolume}|run=${runPerWeek}|avg=${avg}|LR=${longRun}|avgS=${avgSingle}" >> ${tempFile}
 }
+printSummary(){
+	echo -e "${colorNormal}"
+	printLine
+	echo -e " ${colorGreen}SUMMARY${colorNormal}"
+	printLine
+	echo -e "* Your training plan will start on [${colorMagenta}$(date '+%d/%m/%Y' -d ${beginningDate})${colorNormal}] and stop on [${colorMagenta}$(date '+%d/%m/%Y' -d ${lastMondayDate})${colorNormal}] !"
+	echo -e "* Your training plan will last ${colorGreen}${numberOfWeekForTraining}${colorNormal} weeks."
+	echo
+	echo -e "* Increase period :"
+	echo -e "\tYou will increase your volume during ${colorGreen}${volumePeriod}${colorNormal} weeks : \
+	${initialVolume} Km to ${volumeTarget} Km (+ ~${colorGreen}$(scaleNumber ${interval} 2)${colorNormal} Km each week)."
+	echo -e "\tYou will increase your long run (LR) during ${colorGreen}${longRunPeriod}${colorNormal} weeks : \
+	${initialLongRun} Km to ${longRunTarget} (+ ~${colorGreen}$(scaleNumber ${intervalLongRun} 2)${colorNormal} Km each week)."
+	echo
+	echo -e "* Different training phase :"
+
+	for i in ${!runFrequency[@]}; do
+		echo -e "\tP$((${i}+1))) ${colorGreen}$(echo ${runFrequency[${i}]} | cut -d';' -f1)${colorNormal} trainings per week during ${colorGreen}$(echo ${runFrequency[${i}]} |cut -d';' -f2)${colorNormal} weeks."
+	done
+	echo
+	echo
+}
+printHeader(){
+	printLine
+	echo -e " ${colorGreen}TRAINING PLAN${colorNormal} [${numberOfWeekForTraining} weeks] [${totalRun} runs] \
+[V=${initialVolume}->${volumeTarget},+$(scaleNumber ${interval} 2)] [LR=${initialLongRun}->${longRunTarget},+$(scaleNumber ${intervalLongRun} 2)]"
+	printLine
+}
+printTrainingPlan(){
+	column ${tempFile} -t -s "|"
+}
 
 # MAIN
 # ------------------------------------------------------------------------------------------------------
@@ -190,31 +221,6 @@ volumePeriod=$((${numberOfWeekForTraining}-${#sharpening[@]}))
 interval=$(bc -l <<<"(${volumeTarget}-${initialVolume})/(${volumePeriod}-1)")
 intervalLongRun=$(bc -l <<<"(${longRunTarget}-${initialLongRun})/(${longRunPeriod}-1)")
 
-# ----------------------------------
-# SUMMARY
-# ----------------------------------
-echo -e "${colorNormal}"
-printLine
-echo -e " ${colorGreen}SUMMARY${colorNormal}"
-printLine
-echo -e "* Your training plan will start on [${colorMagenta}$(date '+%d/%m/%Y' -d ${beginningDate})${colorNormal}] and stop on [${colorMagenta}$(date '+%d/%m/%Y' -d ${lastMondayDate})${colorNormal}] !"
-echo -e "* Your training plan will last ${colorGreen}${numberOfWeekForTraining}${colorNormal} weeks."
-echo
-echo -e "* Increase period :"
-echo -e "\tYou will increase your volume during ${colorGreen}${volumePeriod}${colorNormal} weeks : \
-${initialVolume} Km to ${volumeTarget} Km (+ ~${colorGreen}$(scaleNumber ${interval} 2)${colorNormal} Km each week)."
-echo -e "\tYou will increase your long run (LR) during ${colorGreen}${longRunPeriod}${colorNormal} weeks : \
-${initialLongRun} Km to ${longRunTarget} (+ ~${colorGreen}$(scaleNumber ${intervalLongRun} 2)${colorNormal} Km each week)."
-echo
-echo -e "* Different training phase :"
-
-for i in ${!runFrequency[@]}; do
-	echo -e "\tP$((${i}+1))) ${colorGreen}$(echo ${runFrequency[${i}]} | cut -d';' -f1)${colorNormal} trainings per week during ${colorGreen}$(echo ${runFrequency[${i}]} |cut -d';' -f2)${colorNormal} weeks."
-done
-echo
-echo
-
-
 totalRun=0
 for i in $(seq 1 ${numberOfWeekForTraining}); do
 		calcDate
@@ -225,15 +231,9 @@ for i in $(seq 1 ${numberOfWeekForTraining}); do
 		calcAvgSingle
 		totalRun=$((${totalRun}+${runPerWeek}))
 
-		printTrainingPlan ${i} ${weekDate} ${weekVolume} ${runPerWeek} ${avg} ${longRun} ${avgSingle}
+		calcTrainingPlan ${i} ${weekDate} ${weekVolume} ${runPerWeek} ${avg} ${longRun} ${avgSingle}
 done
 
-# ----------------------------------
-# TRAINING PLAN
-# ----------------------------------
-printLine
-echo -e " ${colorGreen}TRAINING PLAN${colorNormal} [${numberOfWeekForTraining} weeks] [${totalRun} runs] [V=${initialVolume}->${volumeTarget},+$(scaleNumber ${interval} 2)] [LR=${initialLongRun}->${longRunTarget},+$(scaleNumber ${intervalLongRun} 2)]"
-printLine
-
-# Draw array
-column ${tempFile} -t -s "|"
+printSummary
+printHeader
+printTrainingPlan
