@@ -10,23 +10,22 @@
 # SETINGS
 # ------------------------------------------------------------------------------------------------------
 # Global setings
-beginningDate='20200101'	# Date of the first monday of the training plan. Format : "YYYYmmdd"
-lastMondayDate='20200324'	# Date of the last week of the training plan. Format : "YYYYmmdd"
-numberOfWeekForTraining=16	# Number of weeks for the training plan
+beginningDate='20200203'	# Date of the first monday of the training plan. Format : "YYYYmmdd"
+lastMondayDate='20200323'	# Date of the last week of the training plan. Format : "YYYYmmdd"
+numberOfWeekForTraining=8	# Number of weeks for the training plan
 
 declare -a runFrequency		# Running frequency per week (time to go)
 				# Declaration syntax : "Number of runs per week ; Number of weeks ; comment"
 				# If Number of week is "-" on runFrequency[0] then the number of weeks of each different runFrequency is equal
-runFrequency[0]='3;-;3 trainings per week'
-runFrequency[1]='4;-;4 trainings per week'
-runFrequency[2]='5;-;5 trainings per week'
+runFrequency[0]='4;-;3 trainings per week'
+runFrequency[1]='5;-;4 trainings per week'
 
 # Running volume
-initialVolume=30		# Initial running volume (KM)
-volumeTarget=70			# The maximum running volume desired in a week (KM)
+initialVolume=37		# Initial running volume (KM)
+volumeTarget=60			# The maximum running volume desired in a week (KM)
 
 # Long Run
-firstLongRun=4			# week number of the first long run (week number)
+firstLongRun=1			# week number of the first long run (week number)
 initialLongRun=15		# The first long run in kilometer (KM)
 longRunTarget=30 		# The biggest desired run in the training plan (KM)
 
@@ -35,7 +34,7 @@ longRunBefore=4			# Number of weeks after the longuest run
 declare -a sharpening		# Sharpening period. Declare as many lines as there will be sharpening week after ${volumeTarget}		
 				# Declaration syntax : "percent of volume ; Run per week"
 sharpening[0]='50;3'
-sharpening[1]='10;1'
+sharpening[1]='20;1'
 
 # Misc settings
 scaleNumber=0			# Precision of float number on display
