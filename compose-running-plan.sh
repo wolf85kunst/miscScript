@@ -214,13 +214,8 @@ done
 echo
 echo
 
-# ----------------------------------
-# TRAINING PLAN
-# ----------------------------------
-printLine
-echo -e " ${colorGreen}TRAINING PLAN${colorNormal} [${numberOfWeekForTraining} weeks] [V+$(scaleNumber ${interval} 2)] [LR+$(scaleNumber ${intervalLongRun} 2)]"
-printLine
 
+totalRun=0
 for i in $(seq 1 ${numberOfWeekForTraining}); do
 		calcDate
 		calcVolume
@@ -228,9 +223,17 @@ for i in $(seq 1 ${numberOfWeekForTraining}); do
 		calcAvg
 		calcLongRun
 		calcAvgSingle
+		totalRun=$((${totalRun}+${runPerWeek}))
 
 		printTrainingPlan ${i} ${weekDate} ${weekVolume} ${runPerWeek} ${avg} ${longRun} ${avgSingle}
 done
+
+# ----------------------------------
+# TRAINING PLAN
+# ----------------------------------
+printLine
+echo -e " ${colorGreen}TRAINING PLAN${colorNormal} [${numberOfWeekForTraining} weeks] [${totalRun} runs] [V=${initialVolume}->${volumeTarget},+$(scaleNumber ${interval} 2)] [LR=${initialLongRun}->${longRunTarget},+$(scaleNumber ${intervalLongRun} 2)]"
+printLine
 
 # Draw array
 column ${tempFile} -t -s "|"
