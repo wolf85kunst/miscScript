@@ -30,7 +30,7 @@ initialLongRun=15		# The first long run in kilometer (KM)
 longRunTarget=30 		# The biggest desired run in the training plan (KM)
 
 # Volume reduction (sharpening)
-longRunBefore=4			# Number of weeks after the longuest run
+longRunBefore=3			# Number of weeks after the longuest run
 declare -a sharpening		# Sharpening period. Declare as many lines as there will be sharpening week after ${volumeTarget}		
 				# Declaration syntax : "percent of volume ; Run per week"
 sharpening[0]='50;3'
@@ -130,8 +130,8 @@ calcAvg(){
 	avg=$(bc -l <<<"(${weekVolume}/${runPerWeek})")
 }
 calcLongRun(){
-	if [ ${i} -ge $((${numberOfWeekForTraining}-(${#sharpening[@]}+1))) ]; then
-		longRun='-'
+	if [ ${i} -gt $((${numberOfWeekForTraining}-${longRunBefore})) ]; then
+		longRun="-"
 	elif [ ${i} -ge ${firstLongRun} ]; then
 		longRun=$(bc -l <<<"(${initialLongRun}+((${i}-(${firstLongRun}))*${intervalLongRun}))")
 	else
