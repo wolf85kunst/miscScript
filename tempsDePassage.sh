@@ -79,7 +79,8 @@ allureToSecondPerKm(){
 	echo $(($(echo "${allure}" |cut -d"'" -f1)*60+$(echo "${allure}" |cut -d"'" -f2)))
 }
 secToTimeFormat(){
-	# Input [interger] (seconds)
+	# Input : interger (number of seconds)
+	# Output : string in format "1h 5'40"" (allure)
 	hours=$((${1}/60/60))
 	minutes=$(((${1}/60)-(${hours}*60)))
 	secondes=$((${1}-(${hours}*60*60)-(${minutes}*60)))
