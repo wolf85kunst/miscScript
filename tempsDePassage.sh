@@ -4,16 +4,16 @@
 
 # DESCRIPTION
 # ------------------------------------------------------------------------------------------------------
-# Display your "temps de passage" for given distance and speed or allure.
+# Display your "temps de passage" for given distance and speed or pace.
 
 # SETINGS
 # ------------------------------------------------------------------------------------------------------
 distance=42				# Integer or float. Distance you want to run in KM. Exemple : "10" or "42.175"
 timeToGo=08:30:00			# String. Start time in "HH:MM:SS" format
 
-# Choose either to set "${speed} or ${allure}. Uncomment either.
+# Choose either to set "${speed} or ${pace}. Uncomment either.
 #speed=					# Interger or float format. Exemple : "12" or "12.5"
-allure="5'20"				# String format "5'20" or "5'00"
+pace="5'20"				# String format "5'20" or "5'00"
 
 tempFile='/tmp/tempsDePassage.txt'	# String. Temporary file to generate array
 modulo_ImportantKm=5			# Integer (modulo). Wish line to highlight. 
@@ -50,16 +50,16 @@ scaleNumber(){
 		fi
 	fi
 }
-allureToSpeed(){
-	# Input : string in format "5'20" (allure)
+paceToSpeed(){
+	# Input : string in format "5'20" (pace)
 	# Output : integer or float (speed in km)
-	allure=${1}
-	secPerKm=$(($(echo ${allure} |cut -d"'" -f1)*60+$(echo ${allure} |cut -d"'" -f2 |sed 's/\"//')))
+	pace=${1}
+	secPerKm=$(($(echo ${pace} |cut -d"'" -f1)*60+$(echo ${pace} |cut -d"'" -f2 |sed 's/\"//')))
 	echo $(bc -l <<<"(3600/${secPerKm})")
 }
-speedToAllure(){
+speedToPace(){
 	# Input : integer or float (speed in km)
-	# Output : string in format "5'20" (allure)
+	# Output : string in format "5'20" (pace)
 	speed=${1}
 	secPerKm=$(bc <<<"(3600/${speed})")
 	echo "$((${secPerKm}/60))'$((${secPerKm}-(${secPerKm}/60)*60))"
@@ -72,15 +72,15 @@ addSecToDate(){
 	epoch=$((${epoch}+${sec}))
 	echo $(date '+%H:%M:%S' -d@${epoch})
 }
-allureToSecondPerKm(){
-	# Input : string in format "5'20" (allure)
+paceToSecondPerKm(){
+	# Input : string in format "5'20" (pace)
 	# Output : integer (Number of seconds)
-	allure="${1}"
-	echo $(($(echo "${allure}" |cut -d"'" -f1)*60+$(echo "${allure}" |cut -d"'" -f2)))
+	pace="${1}"
+	echo $(($(echo "${pace}" |cut -d"'" -f1)*60+$(echo "${pace}" |cut -d"'" -f2)))
 }
 secToTimeFormat(){
 	# Input : interger (number of seconds)
-	# Output : string in format "1h 5'40"" (allure)
+	# Output : string in format "1h 5'40"" (pace)
 	hours=$((${1}/60/60))
 	minutes=$(((${1}/60)-(${hours}*60)))
 	secondes=$((${1}-(${hours}*60*60)-(${minutes}*60)))
@@ -100,7 +100,7 @@ printPassage(){
 }
 printHeader(){
 	printLine
-	echo -e "start=${colorGreen}${timeToGo}${colorNormal} End=${colorGreen}${ttime}${colorNormal} Allure=${colorGreen}${allure}/Km${colorNormal} Speed=${colorGreen}$(scaleNumber ${speed} 2)Km/h${colorNormal}" 
+	echo -e "start=${colorGreen}${timeToGo}${colorNormal} End=${colorGreen}${ttime}${colorNormal} time=${colorGreen}${elapsedTimeFormat}${colorNormal} Pace=${colorGreen}${pace}/Km${colorNormal} Speed=${colorGreen}$(scaleNumber ${speed} 2)Km/h${colorNormal}" 
 	printLine
 }
 # MAIN
@@ -109,15 +109,11 @@ printHeader(){
 # Control
 echo -en "${colorNormal}"
 if [ -f ${tempFile} ]; then rm ${tempFile}; fi
-if [ -z ${speed} ]; then speed=$(allureToSpeed ${allure}) ; fi
-if [ -z ${allure} ]; then allure=$(speedToAllure ${speed}) ; fi
-
-#echo "speed=$speed ; allure=$allure"
-#allureToSecondPerKm ${allure}
-#exit
+if [ -z ${speed} ]; then speed=$(paceToSpeed ${pace}) ; fi
+if [ -z ${pace} ]; then pace=$(speedToPace ${speed}) ; fi
 
 # init var
-secPerKm=$(allureToSecondPerKm "${allure}")
+secPerKm=$(paceToSecondPerKm "${pace}")
 elapsedSec=0
 ttime=${timeToGo}
 
