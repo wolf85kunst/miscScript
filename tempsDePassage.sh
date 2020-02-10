@@ -11,9 +11,10 @@
 distance='42.195'				# Integer or float. Distance you want to run in KM. Exemple : "10" or "42.175"
 timeToGo='08:30:00'			# String. Start time in "HH:MM:SS" format
 
-# Choose either to set "${speed} or ${pace}. Uncomment either.
-#speed='11.25'					# Interger or float format. Exemple : "12" or "12.5"
-pace="5'20"				# String format "5'20" or "5'00"
+# Choose either to set "${speed} or ${pace} or totalTime. Uncomment wish variable you want to set.
+#speed='11.25'				# Interger or float format. Exemple : "12" or "12.5"
+#pace="5'20"				# String format "5'20" or "5'00"
+totalTime='03:45:00'			# String format : "HH:MM:SS"
 
 tempFile='/tmp/tempsDePassage.txt'	# String. Temporary file to generate array
 modulo_ImportantKm=5			# Integer (modulo). Wish line to highlight. 
@@ -78,6 +79,21 @@ paceToSecondPerKm(){
 	pace="${1}"
 	echo $(($(echo "${pace}" |cut -d"'" -f1)*60+$(echo "${pace}" |cut -d"'" -f2)))
 }
+secondPerKmToPace(){
+	# Input : interger (Number of seconds)
+	# Output : string in format "5'20" (Pace)
+	minutes=$((${1}/60))
+	secondes=$((${1}-${minutes}*60))
+	if [ ${#secondes} -eq 1 ]; then secondes="0${secondes}" ; fi
+	echo "${minutes}'${secondes}"
+}
+timeFormatToSec(){
+	# Input : string "HH:MM:SS" (total time)
+	hours=$(echo ${1} |cut -d':' -f1)
+	minutes=$(echo ${1} |cut -d':' -f2)
+	secondes=$(echo ${1} |cut -d':' -f3)
+	echo $((${hours}*60*60+${minutes}*60+${secondes}))
+}
 secToTimeFormat(){
 	# Input : interger (number of seconds)
 	# Output : string in format "1h 5'40"" (pace)
@@ -122,11 +138,23 @@ printHeader(){
 # Control
 echo -en "${colorNormal}"
 if [ -f ${tempFile} ]; then rm ${tempFile}; fi
-if [ -z ${speed} ]; then speed=$(paceToSpeed ${pace}) ; fi
-if [ -z ${pace} ]; then pace=$(speedToPace ${speed}) ; fi
+
+# Calculate information
+if ! [ -z ${speed} ]; then 
+	pace=$(speedToPace ${speed})
+	secPerKm=$(paceToSecondPerKm "${pace}")
+elif ! [ -z ${pace} ]; then
+	speed=$(paceToSpeed ${pace})
+	secPerKm=$(paceToSecondPerKm "${pace}")
+elif ! [ -z ${totalTime} ]; then
+	secPerKm=$(bc -l <<<"($(timeFormatToSec ${totalTime})/${distance})")
+	secPerKm=$(scaleNumber ${secPerKm} 0)
+	pace=$(secondPerKmToPace ${secPerKm})
+	speed=$(paceToSpeed ${pace})
+fi
 
 # init var
-secPerKm=$(paceToSecondPerKm "${pace}")
+#secPerKm=$(paceToSecondPerKm "${pace}")
 elapsedSec=0
 ttime=${timeToGo}
 
