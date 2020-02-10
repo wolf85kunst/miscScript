@@ -8,11 +8,11 @@
 
 # SETINGS
 # ------------------------------------------------------------------------------------------------------
-distance=42				# Integer or float. Distance you want to run in KM. Exemple : "10" or "42.175"
-timeToGo=08:30:00			# String. Start time in "HH:MM:SS" format
+distance='42.195'				# Integer or float. Distance you want to run in KM. Exemple : "10" or "42.175"
+timeToGo='08:30:00'			# String. Start time in "HH:MM:SS" format
 
 # Choose either to set "${speed} or ${pace}. Uncomment either.
-#speed=					# Interger or float format. Exemple : "12" or "12.5"
+#speed='11.25'					# Interger or float format. Exemple : "12" or "12.5"
 pace="5'20"				# String format "5'20" or "5'00"
 
 tempFile='/tmp/tempsDePassage.txt'	# String. Temporary file to generate array
@@ -84,19 +84,32 @@ secToTimeFormat(){
 	hours=$((${1}/60/60))
 	minutes=$(((${1}/60)-(${hours}*60)))
 	secondes=$((${1}-(${hours}*60*60)-(${minutes}*60)))
+
+	if [ ${#minutes} -eq 1 ]; then minutes="0${minutes}" ; fi
+	if [ ${#secondes} -eq 1 ]; then secondes="0${secondes}" ; fi
+
 	if [ ${hours} -ne 0 ]; then hours="${hours}h" ; else hours='' ; fi
 	echo "${hours} ${minutes}'${secondes}\""
 }
 printPassage(){
-	if [ $((${i}%${modulo_ImportantKm})) -eq 0 ]; then
-		km="${colorRed}[ KM ${i} ]${colorNormal}"
-	else
+	if ! echo ${i} |grep -q '\.' ; then
+		if [ $((${i}%${modulo_ImportantKm})) -eq 0 ]; then
+			color=${colorRed}
+		else
+			color=${colorNormal}
+		fi
 		km="[ KM ${i} ]"
+	else 
+		km="[ KM ${distance} ]"
+		secPerKm=$(bc <<<"(0.$(echo ${distance} |cut -d'.' -f2)*${secPerKm})")
+		secPerKm=$(echo ${secPerKm} |cut -d'.' -f1)
 	fi
+	
 	elapsedSec=$((${elapsedSec}+${secPerKm}))
 	elapsedTimeFormat=$(secToTimeFormat ${elapsedSec})
 	ttime="$(addSecToDate ${ttime} ${secPerKm})"
-	echo -e "${km}|${elapsedTimeFormat}|${ttime}" >>${tempFile}
+
+	echo -e "${color}${km}|${elapsedTimeFormat}|${ttime}${colorNormal}" >>${tempFile}
 }
 printHeader(){
 	printLine
@@ -117,9 +130,15 @@ secPerKm=$(paceToSecondPerKm "${pace}")
 elapsedSec=0
 ttime=${timeToGo}
 
-for i in $(seq 1 ${distance}); do
+for i in $(seq 1 $(echo ${distance} |cut -d'.' -f1)); do
 	printPassage
 done
+
+# Last meters
+if echo ${distance} |grep -q '\.' ; then
+	i=${distance}
+	printPassage
+fi
 
 printHeader
 
