@@ -8,7 +8,7 @@
 
 # SETINGS
 # ------------------------------------------------------------------------------------------------------
-distance='42.195'				# Integer or float. Distance you want to run in KM. Exemple : "10" or "42.175"
+distance='42.195'			# Integer or float. Distance you want to run in KM. Exemple : "10" or "42.175"
 timeToGo='08:30:00'			# String. Start time in "HH:MM:SS" format
 
 # Choose either to set "${speed} or ${pace} or totalTime. Uncomment wish variable you want to set.
@@ -143,18 +143,20 @@ if [ -f ${tempFile} ]; then rm ${tempFile}; fi
 if ! [ -z ${speed} ]; then 
 	pace=$(speedToPace ${speed})
 	secPerKm=$(paceToSecondPerKm "${pace}")
+	echo '* Speed set'
 elif ! [ -z ${pace} ]; then
 	speed=$(paceToSpeed ${pace})
 	secPerKm=$(paceToSecondPerKm "${pace}")
+	echo '* Pace set'
 elif ! [ -z ${totalTime} ]; then
 	secPerKm=$(bc -l <<<"($(timeFormatToSec ${totalTime})/${distance})")
 	secPerKm=$(scaleNumber ${secPerKm} 0)
 	pace=$(secondPerKmToPace ${secPerKm})
 	speed=$(paceToSpeed ${pace})
+	echo '* TotalTime set'
 fi
 
 # init var
-#secPerKm=$(paceToSecondPerKm "${pace}")
 elapsedSec=0
 ttime=${timeToGo}
 
