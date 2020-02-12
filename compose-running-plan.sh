@@ -188,9 +188,9 @@ printSummary(){
 	echo
 	echo -e "* Increase period :"
 	echo -e "\tYou will increase your volume during ${colorGreen}${volumePeriod}${colorNormal} weeks : \
-	${initialVolume} Km to ${volumeTarget} Km (+ ~${colorGreen}$(scaleNumber ${interval} 2)${colorNormal} Km each week)."
+${initialVolume} Km to ${volumeTarget} Km (+ ~${colorGreen}$(scaleNumber ${interval} 2)${colorNormal} Km each week)."
 	echo -e "\tYou will increase your long run (LR) during ${colorGreen}${longRunPeriod}${colorNormal} weeks : \
-	${initialLongRun} Km to ${longRunTarget} (+ ~${colorGreen}$(scaleNumber ${intervalLongRun} 2)${colorNormal} Km each week)."
+${initialLongRun} Km to ${longRunTarget} (+ ~${colorGreen}$(scaleNumber ${intervalLongRun} 2)${colorNormal} Km each week)."
 	echo
 	echo -e "* Different training phase :"
 
