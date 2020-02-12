@@ -41,10 +41,10 @@ testNumber(){
 	fi
 }
 scaleNumber(){
-	float=${1}
-	scale=${2}
+	float="${1}"
+	scale="${2}"
 	if $(testNumber ${float}); then
-		if [ ${scale} -eq 0 ]; then
+		if [ "${scale}" -eq 0 ]; then
 			echo -n ${float} | cut -d'.' -f1
 		else
 			echo -n ${float} | sed -r "s/([0-9]*\.[0-9]{${scale}}).*/\1/"
@@ -107,33 +107,25 @@ secToTimeFormat(){
 	if [ ${hours} -ne 0 ]; then hours="${hours}h" ; else hours='' ; fi
 	echo "${hours} ${minutes}'${secondes}\""
 }
-printPassage1(){
-	if ! echo ${i} |grep -q '\.' ; then
-		if [ $((${i}%${modulo_ImportantKm})) -eq 0 ]; then
-			color=${colorRed}
-		else
-			color=${colorNormal}
-		fi
-		km="[ KM ${i} ]"
-	else 
-		# distance is a float
-		km="[ KM ${distance} ]"
-		secPerKm=$(bc <<<"(0.$(echo ${distance} |cut -d'.' -f2)*${secPerKm})")
-		secPerKm=$(echo ${secPerKm} |cut -d'.' -f1)
+printPassage(){
+	if ! echo ${1} |grep -q '\.' ; then
+		# number is integer
+		elapsedSec=$((${secPerKm}*${1}))
+		
+		if [ $((${i}%${modulo_ImportantKm})) -eq 0 ]; then color=${colorRed}
+		else color=${colorNormal} ; fi
+	else
+		# number is float
+		secPlus=$(bc <<<"(0.$(echo ${distance} |cut -d'.' -f2)*${secPerKm})")
+		secPlus=$(scaleNumber "${secPlus}" 0)
+		elapsedSec=$((${secPerKm}*$(scaleNumber ${distance} 0)+${secPlus}))
 	fi
 	
-	elapsedSec=$((${elapsedSec}+${secPerKm}))
-	elapsedTimeFormat=$(secToTimeFormat ${elapsedSec})
-	ttime="$(addSecToDate ${ttime} ${secPerKm})"
-
-	echo -e "${color}${km}|${elapsedTimeFormat}|${ttime}${colorNormal}" >>${tempFile}
-}
-printPassage(){
 	km="[ KM ${1} ]"
-	elapsedSec=$((${secPerKm}*${1}))
 	elapsedTimeFormat=$(secToTimeFormat ${elapsedSec})
 	ttime=$(addSecToDate "${timeToGo}" "${elapsedSec}")
-	echo -e "${km}|${elapsedTimeFormat}|${ttime}${colorNormal}" >>${tempFile}
+	
+	echo -e "${color}${km}|${elapsedTimeFormat}|${ttime}${colorNormal}" >>${tempFile}
 }
 printHeader(){
 	printLine
@@ -147,7 +139,7 @@ printHeader(){
 echo -en "${colorNormal}"
 if [ -f ${tempFile} ]; then rm ${tempFile}; fi
 
-# Calculate information
+# Calculate information ${secPerKm} and other var
 if ! [ -z ${speed} ]; then 
 	pace=$(speedToPace ${speed})
 	secPerKm=$(paceToSecondPerKm "${pace}")
@@ -170,11 +162,11 @@ done
 
 # Last meters
 if echo ${distance} |grep -q '\.' ; then
-	i=${distance}
-	printPassage
+	printPassage ${distance}
 fi
 
+# Display Header
 printHeader
 
-# Display flow
+# Display TempsDePassage
 column ${tempFile} -t -s "|"
