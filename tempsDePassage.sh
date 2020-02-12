@@ -107,7 +107,7 @@ secToTimeFormat(){
 	if [ ${hours} -ne 0 ]; then hours="${hours}h" ; else hours='' ; fi
 	echo "${hours} ${minutes}'${secondes}\""
 }
-printPassage(){
+printPassage1(){
 	if ! echo ${i} |grep -q '\.' ; then
 		if [ $((${i}%${modulo_ImportantKm})) -eq 0 ]; then
 			color=${colorRed}
@@ -116,6 +116,7 @@ printPassage(){
 		fi
 		km="[ KM ${i} ]"
 	else 
+		# distance is a float
 		km="[ KM ${distance} ]"
 		secPerKm=$(bc <<<"(0.$(echo ${distance} |cut -d'.' -f2)*${secPerKm})")
 		secPerKm=$(echo ${secPerKm} |cut -d'.' -f1)
@@ -126,6 +127,13 @@ printPassage(){
 	ttime="$(addSecToDate ${ttime} ${secPerKm})"
 
 	echo -e "${color}${km}|${elapsedTimeFormat}|${ttime}${colorNormal}" >>${tempFile}
+}
+printPassage(){
+	km="[ KM ${1} ]"
+	elapsedSec=$((${secPerKm}*${1}))
+	elapsedTimeFormat=$(secToTimeFormat ${elapsedSec})
+	ttime=$(addSecToDate "${timeToGo}" "${elapsedSec}")
+	echo -e "${km}|${elapsedTimeFormat}|${ttime}${colorNormal}" >>${tempFile}
 }
 printHeader(){
 	printLine
@@ -156,12 +164,8 @@ elif ! [ -z ${totalTime} ]; then
 	echo '* TotalTime set'
 fi
 
-# init var
-elapsedSec=0
-ttime=${timeToGo}
-
 for i in $(seq 1 $(echo ${distance} |cut -d'.' -f1)); do
-	printPassage
+	printPassage ${i}
 done
 
 # Last meters
