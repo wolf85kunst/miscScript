@@ -28,7 +28,7 @@ colorNormal="\e[97m"
 # ------------------------------------------------------------------------------------------------------
 printLine(){
         char='='
-        repetition=75
+        repetition=35
         for i in $(seq 1 ${repetition}) ; do echo -n ${char} ; done
         echo
 }
@@ -104,8 +104,8 @@ secToTimeFormat(){
 	if [ ${#minutes} -eq 1 ]; then minutes="0${minutes}" ; fi
 	if [ ${#secondes} -eq 1 ]; then secondes="0${secondes}" ; fi
 
-	if [ ${hours} -ne 0 ]; then hours="${hours}h" ; else hours='' ; fi
-	echo "${hours} ${minutes}'${secondes}\""
+	if [ ${hours} -ne 0 ]; then hours="${hours}h " ; else hours='' ; fi
+	echo "${hours}${minutes}'${secondes}\""
 }
 printPassage(){
 	if ! echo ${1} |grep -q '\.' ; then
@@ -129,7 +129,16 @@ printPassage(){
 }
 printHeader(){
 	printLine
-	echo -e "start=${colorGreen}${timeToGo}${colorNormal} End=${colorGreen}${ttime}${colorNormal} time=${colorGreen}${elapsedTimeFormat}${colorNormal} Pace=${colorGreen}${pace}/Km${colorNormal} Speed=${colorGreen}$(scaleNumber ${speed} 2)Km/h${colorNormal}" 
+	start="start=${colorGreen}${timeToGo}${colorNormal}"
+	end="End=${colorGreen}${ttime}${colorNormal}"
+	timef="time=${colorGreen}${elapsedTimeFormat}${colorNormal}"
+	pace="Pace=${colorGreen}${pace}/Km${colorNormal}"
+	speed="Speed=${colorGreen}$(scaleNumber ${speed} 2)Km/h${colorNormal}"
+	5k="5km=${colorGreen}$(secToTimeFormat $(scaleNumber $(bc -l <<<"(${secPerKm}*5)") 0))${colorNormal}"
+	10k="10km=${colorGreen}$(secToTimeFormat $(scaleNumber $(bc -l <<<"(${secPerKm}*10)") 0))${colorNormal}"
+	21k="21.0975km=${colorGreen}$(secToTimeFormat $(scaleNumber $(bc -l <<<"(${secPerKm}*21.0975)") 0))${colorNormal}"
+	42k="42.195km=${colorGreen}$(secToTimeFormat $(scaleNumber $(bc -l <<<"(${secPerKm}*42.195)") 0))${colorNormal}"
+
 	printLine
 }
 # MAIN
