@@ -129,15 +129,23 @@ printPassage(){
 }
 printHeader(){
 	printLine
-	start="start=${colorGreen}${timeToGo}${colorNormal}"
-	end="End=${colorGreen}${ttime}${colorNormal}"
-	timef="time=${colorGreen}${elapsedTimeFormat}${colorNormal}"
-	pace="Pace=${colorGreen}${pace}/Km${colorNormal}"
-	speed="Speed=${colorGreen}$(scaleNumber ${speed} 2)Km/h${colorNormal}"
-	5k="5km=${colorGreen}$(secToTimeFormat $(scaleNumber $(bc -l <<<"(${secPerKm}*5)") 0))${colorNormal}"
-	10k="10km=${colorGreen}$(secToTimeFormat $(scaleNumber $(bc -l <<<"(${secPerKm}*10)") 0))${colorNormal}"
-	21k="21.0975km=${colorGreen}$(secToTimeFormat $(scaleNumber $(bc -l <<<"(${secPerKm}*21.0975)") 0))${colorNormal}"
-	42k="42.195km=${colorGreen}$(secToTimeFormat $(scaleNumber $(bc -l <<<"(${secPerKm}*42.195)") 0))${colorNormal}"
+	start="${colorGreen}${timeToGo}${colorNormal}"
+	end="${colorGreen}${ttime}${colorNormal}"
+	timef="${colorGreen}${elapsedTimeFormat}${colorNormal}"
+	pace="${colorGreen}${pace}/Km${colorNormal}"
+	speed="${colorGreen}$(scaleNumber ${speed} 2)Km/h${colorNormal}"
+	k05="${colorGreen}$(secToTimeFormat $(scaleNumber $(bc -l <<<"(${secPerKm}*5)") 0 ))${colorNormal}"
+	k10="${colorGreen}$(secToTimeFormat $(scaleNumber $(bc -l <<<"(${secPerKm}*10)") 0))${colorNormal}"
+	k21="${colorGreen}$(secToTimeFormat $(scaleNumber $(bc -l <<<"(${secPerKm}*21.0975)") 0))${colorNormal}"
+	k42="${colorGreen}$(secToTimeFormat $(scaleNumber $(bc -l <<<"(${secPerKm}*42.195)") 0))${colorNormal}"
+
+	echo -e "
+start:|${start}|
+end:|${end}|5km:|${k05}
+time:|${timef}|10km:|${k10}
+pace:|${pace}|21km:|${k21}
+speed:|${speed}|42km:|${k42}
+	" | column -t -s "|"
 
 	printLine
 }
