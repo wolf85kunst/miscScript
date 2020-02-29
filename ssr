@@ -1,17 +1,87 @@
 #!/bin/bash
 # Hugo GUTEKUNST
+# Feb. 2020
+
+# DESCRIPTION
+# -----------------------------------------------------------------------
 # A wrapper to manage easily SSH with a server list
-# You shoud add these commands to your ".bashrc" file to enable "alias" and "auto-completion" from a ${serverList} :
+# You shoud add these commands to your ".bashrc" to enable "alias" and "auto-completion" from a ${serverList} :
 # ---
 #	serverList="/home/${USER}/Documents/servers.list"
 #	complete -W "$(cat ${serverList})" ssr
-#	alias ssr='/home/${USER}/Scripts/ssr' 
+#	alias ssr='/home/${USER}/Scripts/ssr'
+#	alias ssa='/home/${USER}/Scripts/ssr add'
 
+# SETTINGS
+# -----------------------------------------------------------------------
 tabTitle="${1}"
 sshUser='root'
 sshKeyPath="/home/${USER}/.ssh/hugo_gutekunst"
+fqdn='.fqdn.tld'
+serverList="/home/hugo/Documents/server.list"
 
-if [ $# -eq 0 ]; then echo -e "* USAGE :\t${0} [server.fqdn.tld]" && exit 100 ; fi
-if [ $(ssh-add -l | grep -v 'The agent has no identities.' | wc -l) -eq 0 ]; then ssh-agent && ssh-add "${sshKeyPath}" ; fi
-echo -ne "\033]0;SSH:${tabTitle}\007"
-ssh -l ${sshUser} -A $@
+# FUNCTIONS
+# -----------------------------------------------------------------------
+feedServerList(){
+	if [ -f "${serverList}" ]; then 
+		before=$(cat ${serverList} |wc -l)
+		mv ${serverList} ${serverList}.bkp
+	else
+		before=0
+	fi
+	ssh root@prometheus${fqdn} "cat /etc/prometheus/prometheus.yml |grep 9200 |cut -d\"'\" -f2 |cut -d':' -f1" > ${serverList}
+	if [ "$?" -ne 0 ]; then echo "> Feed ${serverList} [ERROR]" ; exit ; fi
+	after=$(cat ${serverList} |wc -l)
+	added=$((after-before))
+	echo "> +${added} servers added to -> ${serverList} [total: ${after}] [OK]"
+	source /home/${USER}/.bashrc
+}
+addSshPassphrase(){
+	#eval `ssh-agent` ; 
+	ssh-agent ; ssh-add "${sshKeyPath}"
+}
+isSshPassphraseAdded(){
+	if [ $(ssh-add -l | grep -v 'The agent has no identities.' | wc -l) -eq 0 ]; then addSshPassphrase ; fi
+}
+controlUsage(){
+	argN=$(echo "${@}" |wc -w)
+	if ! [ -f ${serverList} ]; then echo "[ERROR] File ${serverList} does not exist. Please run \"ssr feed\" to fix it !" && exit 100 ; fi
+	if [ ${argN} -ne 1 ] || [ "${1}" == 'help' ] ; then
+		echo "USAGE : ${0} <param1>"
+		echo "  ssr [help|add|remove|feed|list]"
+		echo "  ssr <serverIp>"
+		echo "  ssr <serverName>"
+		echo "  ssr <serverFQDN>"
+		echo
+		echo 'OPTIONS :'
+		echo '  add       Add SSH Passphrase to agent'
+		echo '  remove    Remove SSH Passphrase from agent'
+		echo '  list      List all server from ${serverList}'
+		echo '  help      Get some help'
+		exit 101
+	fi
+	if ssh-add -l | grep -qi "The agent has no identities." ; then addSshPassphrase ; fi
+}
+tagTab(){
+	echo -ne "\033]0;SSH:${tabTitle}\007"
+}
+
+# MAIN
+# -----------------------------------------------------------------------
+case ${1} in
+	'help') controlUsage "${@}" ;;
+	ad*|add|a ) addSshPassphrase ;;
+	'remove') ssh-add -D ;;
+	'feed') feedServerList ; exit ;;
+	'list') cat ${serverList} |sort |sed "s/${fqdn}//" | nl ; exit ;;
+	*)
+		controlUsage "${@}"
+		tagTab
+		if [[ "${@}" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]] || [[ ${@} =~ "${fqdn}"$ ]]  ; then
+			serverName="${@}"
+		else
+			serverName="${@}${fqdn}"
+		fi
+		ssh -l ${sshUser} -A ${serverName} 
+	;;
+esac
