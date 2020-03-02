@@ -12,21 +12,23 @@
 # Global setings
 beginningDate='20200203'	# Date of the first monday of the training plan. Format : "YYYYmmdd"
 lastMondayDate='20200323'	# Date of the last week of the training plan. Format : "YYYYmmdd"
-numberOfWeekForTraining=8	# Number of weeks for the training plan
+numberOfWeekForTraining=20	# Number of weeks for the training plan
 
 declare -a runFrequency		# Running frequency per week (time to go)
 				# Declaration syntax : "Number of runs per week ; Number of weeks ; comment"
 				# If Number of week is "-" on runFrequency[0] then the number of weeks of each different runFrequency is equal
-runFrequency[0]='4;-;3 trainings per week'
-runFrequency[1]='5;-;4 trainings per week'
+runFrequency[0]='4;-'
+runFrequency[1]='5;-'
+runFrequency[2]='5;-'
+runFrequency[2]='6;-'
 
 # Running volume
 initialVolume=37		# Initial running volume (KM)
-volumeTarget=60			# The maximum running volume desired in a week (KM)
+volumeTarget=80			# The maximum running volume desired in a week (KM)
 
 # Long Run
-firstLongRun=1			# week number of the first long run (week number)
-initialLongRun=15		# The first long run in kilometer (KM)
+firstLongRun='-'		# week number of the first long run (week number). To disable LongRun, set firstLongRun='-'
+initialLongRun=10		# The first long run in kilometer (KM)
 longRunTarget=30 		# The biggest desired run in the training plan (KM)
 
 # Volume reduction (sharpening)
@@ -130,7 +132,9 @@ calcAvg(){
 	avg=$(bc -l <<<"(${weekVolume}/${runPerWeek})")
 }
 calcLongRun(){
-	if [ ${i} -gt $((${numberOfWeekForTraining}-${longRunBefore})) ]; then
+	if [ ${firstLongRun} == '-' ]; then
+		longRun="-"
+	elif [ ${i} -gt $((${numberOfWeekForTraining}-${longRunBefore})) ]; then
 		longRun="-"
 	elif [ ${i} -ge ${firstLongRun} ]; then
 		longRun=$(bc -l <<<"(${initialLongRun}+((${i}-(${firstLongRun}))*${intervalLongRun}))")
@@ -139,7 +143,9 @@ calcLongRun(){
 	fi
 }
 calcAvgSingle(){
-	if [ ${i} -ge $((${numberOfWeekForTraining}-(${#sharpening[@]}+1))) ]; then
+	if [ ${firstLongRun} == '-' ]; then
+		avgSingle="${avg}"
+	elif [ ${i} -ge $((${numberOfWeekForTraining}-(${#sharpening[@]}+1))) ]; then
 		avgSingle="${avg}"
 	elif [ ${i} -ge ${firstLongRun} ]; then
 		avgSingle=$(bc -l <<<"((${weekVolume}-${longRun})/(${runPerWeek}-1))")	
@@ -237,3 +243,4 @@ done
 printSummary
 printHeader
 printTrainingPlan
+echo
