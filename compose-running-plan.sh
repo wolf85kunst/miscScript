@@ -10,9 +10,10 @@
 # SETINGS
 # ------------------------------------------------------------------------------------------------------
 # Global setings
-beginningDate='20200203'	# Date of the first monday of the training plan. Format : "YYYYmmdd"
+# You need to set 2 of these 3 variables :
+#beginningDate='20200203'	# Date of the first monday of the training plan. Format : "YYYYmmdd"
 lastMondayDate='20200927'	# Date of the last week of the training plan. Format : "YYYYmmdd"
-numberOfWeekForTraining=2	# Number of weeks for the training plan
+numberOfWeekForTraining=20	# Number of weeks for the training plan
 
 declare -a runFrequency		# Running frequency per week (time to go)
 				# Declaration syntax : "Number of runs per week ; Number of weeks ; comment"
@@ -20,26 +21,26 @@ declare -a runFrequency		# Running frequency per week (time to go)
 runFrequency[0]='4;-'
 runFrequency[1]='5;-'
 runFrequency[2]='5;-'
-runFrequency[2]='6;-'
 
 # Running volume
-initialVolume=37		# Initial running volume (KM)
+initialVolume=40		# Initial running volume (KM)
 volumeTarget=80			# The maximum running volume desired in a week (KM)
 
 # Long Run
-firstLongRun='4'		# week number of the first long run (week number). To disable LongRun, set firstLongRun='-'
-initialLongRun=10		# The first long run in kilometer (KM)
+firstLongRun='8'		# week number of the first long run (week number). To disable LongRun, set firstLongRun='-'
+initialLongRun=17		# The first long run in kilometer (KM)
 longRunTarget=30 		# The biggest desired run in the training plan (KM)
 
 # Volume reduction (sharpening)
-longRunBefore=3			# Number of weeks after the longuest run
+longRunBefore=6			# Number of weeks after the longuest run
 declare -a sharpening		# Sharpening period. Declare as many lines as there will be sharpening week after ${volumeTarget}		
 				# Declaration syntax : "percent of volume ; Run per week"
-sharpening[0]='50;3'
-sharpening[1]='20;1'
+sharpening[0]='70;3'
+sharpening[1]='50;3'
+sharpening[2]='20;1'
 
 # Misc settings
-scaleNumber=2			# Precision of float number on display
+scaleNumber=0			# Precision of float number on display
 tempFile=/tmp/plan.txt		# Temporary file to draw the array
 
 # Colors definition		# Bash color code library
@@ -56,12 +57,8 @@ calcBeginDate(){
 	if [ ${day} -ne 1 ]; then
 		lastMondayDate=$(date "+%Y%m%d" --date="${lastMondayDate} - $((${day}-1)) day")
 	fi
-	beginningDate=$(date '+%Y%m%d' --date="${lastMondayDate} - $((${numberOfWeekForTraining}*7)) days")	
+	beginningDate=$(date '+%Y%m%d' --date="${lastMondayDate} - $(((${numberOfWeekForTraining}-1)*7)) days")	
 }
-calcBeginDate
-echo ${beginningDate}
-echo ${lastMondayDate}
-exit
 printLine(){
 	char='='
 	repetition=75
@@ -145,6 +142,8 @@ calcAvg(){
 calcLongRun(){
 	if [ ${firstLongRun} == '-' ]; then
 		longRun="-"
+	elif [ ${i} -eq $((${numberOfWeekForTraining}-${longRunBefore})) ]; then
+		longRun="${longRunTarget}"
 	elif [ ${i} -gt $((${numberOfWeekForTraining}-${longRunBefore})) ]; then
 		longRun="-"
 	elif [ ${i} -ge ${firstLongRun} ]; then
@@ -154,7 +153,7 @@ calcLongRun(){
 	fi
 }
 calcAvgSingle(){
-	if [ ${firstLongRun} == '-' ]; then
+	if [ ${firstLongRun} == '-' ] || [ ${longRun} == '-' ]; then
 		avgSingle="${avg}"
 	elif [ ${i} -ge $((${numberOfWeekForTraining}-(${#sharpening[@]}+1))) ]; then
 		avgSingle="${avg}"
@@ -192,7 +191,6 @@ calcTrainingPlan(){
 	fi
 	
 	avgSingle="${colorGreen}$(scaleNumber ${7} 2)${colorNormal}km"
-
 	echo -e "${weekNumber}|[${dateFormat}]|volume=${weekVolume}|run=${runPerWeek}|avg=${avg}|LR=${longRun}|avgS=${avgSingle}" >> ${tempFile}
 }
 printSummary(){
@@ -235,9 +233,13 @@ if [ -f ${tempFile} ]; then rm ${tempFile}; fi
 
 # Calc beginningDate or lastMondayDate
 if ! [ -z ${beginningDate} ] && ! [ -z ${lastMondayDate} ]; then
+	echo '* Set beginningDate - lastMondayDate [TODO]'
 elif ! [ -z ${beginningDate} ] && ! [ -z ${numberOfWeekForTraining} ]; then
+	echo '* Set beginningDate - numberOfWeekForTraining'
 elif ! [ -z ${lastMondayDate} ] && ! [ -z ${numberOfWeekForTraining} ]; then
-else echo '[Error] you have to set at least 2 parameters among this 3 options : ${beginningDate} ${lastMondayDate} ${numberOfWeekForTraining}' ; fi
+	echo '* Set lastMondayDate - numberOfWeekForTraining'
+	calcBeginDate
+else echo '[Error] you have to set at least 2 parameters among this 3 options : ${beginningDate} ${lastMondayDate} ${numberOfWeekForTraining}' && exit ; fi
 
 longRunPeriod=$((${numberOfWeekForTraining}-${longRunBefore}-${firstLongRun}+1))
 volumePeriod=$((${numberOfWeekForTraining}-${#sharpening[@]}))
