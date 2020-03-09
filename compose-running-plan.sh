@@ -11,8 +11,8 @@
 # ------------------------------------------------------------------------------------------------------
 # Global setings
 beginningDate='20200203'	# Date of the first monday of the training plan. Format : "YYYYmmdd"
-lastMondayDate='20200323'	# Date of the last week of the training plan. Format : "YYYYmmdd"
-numberOfWeekForTraining=20	# Number of weeks for the training plan
+lastMondayDate='20200927'	# Date of the last week of the training plan. Format : "YYYYmmdd"
+numberOfWeekForTraining=2	# Number of weeks for the training plan
 
 declare -a runFrequency		# Running frequency per week (time to go)
 				# Declaration syntax : "Number of runs per week ; Number of weeks ; comment"
@@ -27,7 +27,7 @@ initialVolume=37		# Initial running volume (KM)
 volumeTarget=80			# The maximum running volume desired in a week (KM)
 
 # Long Run
-firstLongRun='-'		# week number of the first long run (week number). To disable LongRun, set firstLongRun='-'
+firstLongRun='4'		# week number of the first long run (week number). To disable LongRun, set firstLongRun='-'
 initialLongRun=10		# The first long run in kilometer (KM)
 longRunTarget=30 		# The biggest desired run in the training plan (KM)
 
@@ -39,7 +39,7 @@ sharpening[0]='50;3'
 sharpening[1]='20;1'
 
 # Misc settings
-scaleNumber=0			# Precision of float number on display
+scaleNumber=2			# Precision of float number on display
 tempFile=/tmp/plan.txt		# Temporary file to draw the array
 
 # Colors definition		# Bash color code library
@@ -51,6 +51,17 @@ colorBackgroundBlue="\e[44m"
 
 # FUNCTIONS
 # ------------------------------------------------------------------------------------------------------
+calcBeginDate(){
+	day=$(date '+%u' --date="${lastMondayDate}")
+	if [ ${day} -ne 1 ]; then
+		lastMondayDate=$(date "+%Y%m%d" --date="${lastMondayDate} - $((${day}-1)) day")
+	fi
+	beginningDate=$(date '+%Y%m%d' --date="${lastMondayDate} - $((${numberOfWeekForTraining}*7)) days")	
+}
+calcBeginDate
+echo ${beginningDate}
+echo ${lastMondayDate}
+exit
 printLine(){
 	char='='
 	repetition=75
@@ -221,6 +232,12 @@ printTrainingPlan(){
 # Some control before starting
 rewriteRunFrequency
 if [ -f ${tempFile} ]; then rm ${tempFile}; fi
+
+# Calc beginningDate or lastMondayDate
+if ! [ -z ${beginningDate} ] && ! [ -z ${lastMondayDate} ]; then
+elif ! [ -z ${beginningDate} ] && ! [ -z ${numberOfWeekForTraining} ]; then
+elif ! [ -z ${lastMondayDate} ] && ! [ -z ${numberOfWeekForTraining} ]; then
+else echo '[Error] you have to set at least 2 parameters among this 3 options : ${beginningDate} ${lastMondayDate} ${numberOfWeekForTraining}' ; fi
 
 longRunPeriod=$((${numberOfWeekForTraining}-${longRunBefore}-${firstLongRun}+1))
 volumePeriod=$((${numberOfWeekForTraining}-${#sharpening[@]}))
